@@ -20,11 +20,11 @@
   "scripts": {
     "cleanup": "rimraf coverage/ .nyc_output/ node_modules/.cache/",
     "git-reset": "git reset --hard HEAD && git clean -df && git pull",
-    "test:setup": "./scripts/docker-test-setup.sh",
     "lint": "eslint libs/**/*.js",
     "test": "./scripts/docker-test-run.sh iamtest -r spec",
     "test:export-coverage": "./scripts/docker-test-run.sh iamtest -c lcovonly test/unit/**/*",
     "test:serve-coverage": "./scripts/docker-test-coverage-serve.sh",
+    "test:setup": "./scripts/docker-test-setup.sh",
     "preversion": "run-s -s cleanup lint test"
   },
   "dependencies": {
