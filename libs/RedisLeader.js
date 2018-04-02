@@ -52,15 +52,7 @@ class RedisLeader extends EventEmitter {
         this._schedule = createScheduler();
 
         if (this._options.autostart) {
-            this.start().catch((err) => {
-                /*
-                 *  Some unicorns are here to prevent `UnhandledPromiseRejectionWarning`
-                 *  https://qubyte.codes/blog/promises-and-nodejs-event-emitters-dont-mix
-                 */
-                process.nextTick(() => {
-                    this._emitError(err);
-                });
-            });
+            this.start().catch(this._emitError);
         }
     }
 
@@ -243,14 +235,18 @@ class RedisLeader extends EventEmitter {
 
         return setInterval(
             () => {
-                redisClient.get(key).then((leaderId) => {
-                    if (leaderId === nodeId) {
-                        redisClient.publish(keepaliveChannel, nodeId);
-                        redisClient.pexpireifeq(key, nodeId, failoverTimeout);
-                    } else {
-                        this._dispatch(KEEPALIVE_FAILURE).catch(this._emitError);
-                    }
-                });
+                redisClient.get(key)
+                    .then((leaderId) => {
+                        if (leaderId === nodeId) {
+                            redisClient.publish(keepaliveChannel, nodeId).catch(noop);
+                            redisClient.pexpireifeq(key, nodeId, failoverTimeout).catch(noop);
+                        } else {
+                            this._dispatch(KEEPALIVE_FAILURE).catch(noop);
+                        }
+                    })
+                    .catch(() => {
+                        this._dispatch(KEEPALIVE_FAILURE).catch(noop);
+                    });
             },
             keepaliveInterval,
         );
@@ -326,7 +322,13 @@ class RedisLeader extends EventEmitter {
     }
 
     _emitError(err) {
-        this.emit('error', err);
+        /*
+         *  Some unicorns are here to prevent `UnhandledPromiseRejectionWarning`
+         *  https://qubyte.codes/blog/promises-and-nodejs-event-emitters-dont-mix
+         */
+        process.nextTick(() => {
+            this.emit('error', err);
+        });
     }
 }
 

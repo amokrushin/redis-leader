@@ -1,5 +1,6 @@
 const RedisLeader = require('../../libs/RedisLeader');
 
+const dummyError = new Error('Dummy error');
 const noop = () => {};
 const delay = (timeout = 0) => new Promise(resolve => setTimeout(resolve, timeout));
 const getOptions = (options) => new RedisLeader(noop, options)._options;
@@ -18,6 +19,7 @@ const createTestLogger = (options = {}) => {
 };
 
 module.exports = {
+    dummyError,
     noop,
     delay,
     getOptions,

@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const Redis = require('ioredis');
 const RedisLeader = require('../../libs/RedisLeader');
+const { dummyError } = require('.');
 
 const leader = () => {
     const { keyNodeIdSeq, keyNodeLeaderId } = RedisLeader.defaultOptions;
@@ -26,7 +27,17 @@ const worker = () => {
     return redisStub;
 };
 
+const errorOnIncr = () => {
+    const redisStub = sinon.createStubInstance(Redis);
+
+    redisStub.incr.rejects(dummyError);
+    redisStub.set.resolves(null);
+
+    return redisStub;
+};
+
 module.exports = {
     leader,
     worker,
+    errorOnIncr,
 };
