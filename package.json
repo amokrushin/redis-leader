@@ -1,0 +1,54 @@
+{
+  "name": "@amokrushin/redis-leader",
+  "version": "0.1.0",
+  "description": "",
+  "homepage": "https://github.com/amokrushin/redis-leader#readme",
+  "bugs": {
+    "url": "https://github.com/amokrushin/redis-leader/issues"
+  },
+  "license": "MIT",
+  "author": "Anton Mokrushin <anton@mokr.org>",
+  "files": [
+    "libs",
+    "lua"
+  ],
+  "main": "libs/RedisLeader.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amokrushin/redis-leader.git"
+  },
+  "scripts": {
+    "cleanup": "rimraf coverage/ .nyc_output/ node_modules/.cache/",
+    "test:setup": "./scripts/docker-test-setup.sh",
+    "lint": "eslint libs/**/*.js",
+    "test": "./scripts/docker-test-run.sh iamtest -r spec",
+    "test:export-coverage": "./scripts/docker-test-run.sh iamtest -c lcovonly test/unit/**/*",
+    "test:serve-coverage": "./scripts/docker-test-coverage-serve.sh",
+    "preversion": "run-s -s cleanup lint test"
+  },
+  "dependencies": {
+    "@amokrushin/watchdog": "^0.1.4",
+    "lodash.defaults": "^4.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.7.0",
+    "iamtest": "^1.5.5",
+    "ioredis": "^3.2.2",
+    "npm-run-all": "^4.1.2",
+    "rimraf": "^2.6.2",
+    "sinon": "^4.5.0",
+    "tape": "^4.9.0",
+    "tape-promise": "^3.0.0"
+  },
+  "peerDependencies": {
+    "ioredis": "^3.2.2"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

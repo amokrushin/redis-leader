@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "no-new": ["off"],
+    "no-prototype-builtins": ["off"]
+  }
+}
