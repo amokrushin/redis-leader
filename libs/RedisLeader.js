@@ -243,6 +243,7 @@ class RedisLeader extends EventEmitter {
                         } else {
                             this._dispatch(KEEPALIVE_FAILURE).catch(noop);
                         }
+                        return null;
                     })
                     .catch(() => {
                         this._dispatch(KEEPALIVE_FAILURE).catch(noop);
