@@ -19,6 +19,7 @@
   },
   "scripts": {
     "cleanup": "rimraf coverage/ .nyc_output/ node_modules/.cache/",
+    "git-reset": "git reset --hard HEAD && git clean -df && git pull",
     "test:setup": "./scripts/docker-test-setup.sh",
     "lint": "eslint libs/**/*.js",
     "test": "./scripts/docker-test-run.sh iamtest -r spec",
