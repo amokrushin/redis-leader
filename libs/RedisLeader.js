@@ -52,7 +52,15 @@ class RedisLeader extends EventEmitter {
         this._schedule = createScheduler();
 
         if (this._options.autostart) {
-            this.start().catch(this._emitError);
+            this.start().catch((err) => {
+                /*
+                 *  Some unicorns are here to prevent `UnhandledPromiseRejectionWarning`
+                 *  https://qubyte.codes/blog/promises-and-nodejs-event-emitters-dont-mix
+                 */
+                process.nextTick(() => {
+                    this._emitError(err);
+                });
+            });
         }
     }
 
@@ -294,8 +302,8 @@ class RedisLeader extends EventEmitter {
         const { keyPrefix, keyNodeIdSeq } = this._options;
         const { redisClient } = this._getState();
         const key = joinKey(keyPrefix, keyNodeIdSeq);
-        const nodeId = String(await redisClient.incr(key));
-        return nodeId;
+
+        return String(await redisClient.incr(key));
     }
 
     async _requestIsLeader() {
