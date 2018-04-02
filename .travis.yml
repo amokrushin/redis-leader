@@ -15,3 +15,11 @@ script:
   - npm test
 after_success:
   - npm run test:export-coverage && npx codecov
+deploy:
+  provider: npm
+  email: anton@mokr.org
+  api_key:
+    secure: k6uQ0TEOOC09gGRaXSkEnnN2JmI/F6UecGQMimP/Ko3TmLZc1IfAXxhE6jFEZnY0fE8NGP2FmV2aT47JgeVi+kERgHbN4/KZJsHrupx/whMjSVCsFG21teWHJ9S6GsriSKVfj+ModhukN7baErPbgSqTz3QbCMzITu5nPKXEKOiFCruZbSbSmSWxObaTGJtbvMlgyyqPRFxKXfoW5jWzUiWxXLMTg+ZR/WEQxkEumPkgGiUXgRDux2iJW3w643gFBsVb6SnjZl2/kiEzAKCbLllxjrhRc3fSWxvBiuJ7e0xFkBtA9h9ib6nRgN4xzRG6kHcQs0GDDy4n+iJyXdFqz21LarHc+GbxbaUFMwiqiWwnZSZQ/OsY6z4n8EXSXmx196o611JKzzREuBK6J26ehqLqg08U1X/Zz8tzA64EeBDqASKUYb4H2IlTG2Az41V4mkKXfB5CBw4Rqy9McJ1Iq9uM/qHdS2bUYlmsMglrO0jRWA9ZaCuIaOZYXnIh8Xgg2lA76ga4RryxcY7qG2e3Z10K8OzvNb+npRJnPDAToES+OifIKSgTUoy++mQUWzvsx1ZFKuG4OYS1ubGU93yQDZzgMZI+sKaMxYD9XoTK8V+W1c/gRiRhILwiB/0gOa9V7cQH89kmCq9VvdMFlAoIQRxMBA5f4mr7umM0J3BbIgA=
+  on:
+    tags: true
+    repo: amokrushin/redis-leader
