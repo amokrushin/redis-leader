@@ -1,14 +1,9 @@
 const test = require('tape-promise/tape');
-const Redis = require('ioredis');
 const sinon = require('sinon');
 const RedisLeader = require('../../libs/RedisLeader');
 const { waitForEvent } = require('../helpers/async-utils');
 const { delay } = require('../helpers');
-
-const createClient = () => new Redis({
-    host: process.env.REDIS_HOST,
-    retryStrategy: () => false,
-});
+const createClient = require('../helpers/createClient');
 
 const countNodesByState = (nodes) => {
     let inactive = 0;

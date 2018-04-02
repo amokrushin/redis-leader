@@ -1,15 +1,12 @@
 const test = require('tape-promise/tape');
 const assert = require('assert');
-const Redis = require('ioredis');
 const lua = require('../../libs/lua');
 const { delay } = require('../helpers');
+const createClient = require('../helpers/createClient');
 
 assert(process.env.NODE_ENV, 'test');
 
-const redis = new Redis({
-    host: process.env.REDIS_HOST,
-    retryStrategy: () => false,
-});
+const redis = createClient();
 
 test('connect', (t) => {
     redis.once('connect', () => {

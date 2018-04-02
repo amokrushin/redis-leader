@@ -1,13 +1,8 @@
 const test = require('tape-promise/tape');
-const Redis = require('ioredis');
 const RedisLeader = require('../../libs/RedisLeader');
 const { waitForEvent } = require('../helpers/async-utils');
 const { delay, createTestLogger } = require('../helpers');
-
-const createClient = () => new Redis({
-    host: process.env.REDIS_HOST,
-    retryStrategy: () => false,
-});
+const createClient = require('../helpers/createClient');
 
 function dropLeaderKey() {
     const redis = createClient();
