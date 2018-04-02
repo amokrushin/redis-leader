@@ -12,6 +12,7 @@ before_install:
 before_script:
   - npm run -s test:setup
   - npm run -s test:wait-for-redis
+  - sleep 10
 script:
   - npm test -s
 after_success:
