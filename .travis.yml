@@ -10,11 +10,12 @@ before_install:
   - sudo apt-get update
   - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
 before_script:
-  - npm run test:setup
+  - npm run -s test:setup
+  - npm run -s test:wait-for-redis
 script:
-  - npm test
+  - npm test -s
 after_success:
-  - npm run test:export-coverage && npx codecov
+  - npm run -s test:export-coverage && npx codecov
 deploy:
   provider: npm
   email: anton@mokr.org

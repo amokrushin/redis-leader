@@ -25,6 +25,7 @@
     "test:export-coverage": "./scripts/docker-test-run.sh iamtest -c lcovonly test/unit/**/*",
     "test:serve-coverage": "./scripts/docker-test-coverage-serve.sh",
     "test:setup": "./scripts/docker-test-setup.sh",
+    "test:wait-for-redis": "./scripts/docker-wait-for-redis.sh",
     "preversion": "run-s -s cleanup lint test"
   },
   "dependencies": {
