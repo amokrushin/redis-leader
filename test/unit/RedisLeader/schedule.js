@@ -1,18 +1,8 @@
 const test = require('tape-promise/tape');
 const RedisLeader = require('../../../libs/RedisLeader');
 const redisStub = require('../../helpers/redisStub');
+const { createTestLogger } = require('../../helpers');
 
-const createTestLogger = () => {
-    const dispatchCalls = [];
-    return {
-        info(...args) {
-            if (args[0] === '[DISPATCH]') {
-                dispatchCalls.push(args[2]);
-            }
-        },
-        dispatchCalls,
-    };
-};
 
 test('schedule start->stop as leader'.toUpperCase(), async (t) => {
     const logger = createTestLogger();

@@ -16,6 +16,10 @@ const scripts = {
         numberOfKeys: 1,
         lua: loadScript('pexpirenex'),
     },
+    pexpireifeq: {
+        numberOfKeys: 1,
+        lua: loadScript('pexpireifeq'),
+    },
 };
 
 module.exports = scripts;

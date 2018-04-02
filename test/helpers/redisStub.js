@@ -4,7 +4,7 @@ const RedisLeader = require('../../libs/RedisLeader');
 
 const leader = () => {
     const { keyNodeIdSeq, keyNodeLeaderId } = RedisLeader.defaultOptions;
-    const nodeId = 123;
+    const nodeId = '123';
 
     const redisStub = sinon.createStubInstance(Redis);
 
@@ -16,7 +16,7 @@ const leader = () => {
 
 const worker = () => {
     const { keyNodeIdSeq, keyNodeLeaderId } = RedisLeader.defaultOptions;
-    const nodeId = 123;
+    const nodeId = '123';
 
     const redisStub = sinon.createStubInstance(Redis);
 

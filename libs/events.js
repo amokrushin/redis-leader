@@ -10,4 +10,5 @@ module.exports = [
     'STOP_KEEPALIVE',
     'SET_KEEPALIVE_TIMER',
     'WATCHDOG_TRIGGER',
+    'KEEPALIVE_FAILURE',
 ].reduce((acc, event) => Object.assign(acc, { [event]: event }), {});

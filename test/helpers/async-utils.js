@@ -1,23 +1,37 @@
 const assert = require('assert');
 
-const waitForEvent = (eventEmitter, event, filter = null) => new Promise((resolve) => {
+const waitForEvent = (eventEmitter, event, options = {}) => new Promise((resolve) => {
     assert(typeof eventEmitter.on === 'function', 'eventEmitter.on must be a function');
     assert(typeof eventEmitter.once === 'function', 'eventEmitter.once must be a function');
     assert(typeof event === 'string', 'event must be a string');
+    assert(typeof options === 'object', 'options must be an object');
 
-    function listener(...args) {
-        if (filter(...args)) {
-            eventEmitter.removeListener(event, listener);
-            resolve();
-        }
-    }
-
+    const { filter = null, timeout = 10000 } = options;
     if (filter) {
         assert(typeof filter === 'function', 'filter must be a function');
-        eventEmitter.on(event, listener);
-    } else {
-        eventEmitter.once(event, resolve);
     }
+    if (timeout) {
+        assert(typeof timeout === 'number', 'timeout must be a number');
+    }
+
+    let timerId = null;
+
+    function listener(...args) {
+        if (filter && !filter(...args)) {
+            return;
+        }
+        clearTimeout(timerId);
+        eventEmitter.removeListener(event, listener);
+        resolve();
+    }
+
+    if (timeout) {
+        timerId = setTimeout(() => {
+            throw new Error('Timed out');
+        }, timeout);
+    }
+
+    eventEmitter.on(event, listener);
 });
 
 waitForEvent.race = (eventEmitters, event, filter = null) => new Promise((resolve) => {

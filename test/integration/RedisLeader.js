@@ -1,5 +1,6 @@
 const test = require('tape-promise/tape');
 const Redis = require('ioredis');
+const sinon = require('sinon');
 const RedisLeader = require('../../libs/RedisLeader');
 const { waitForEvent } = require('../helpers/async-utils');
 const { delay } = require('../helpers');
@@ -31,15 +32,15 @@ async function waitForKeepalive() {
     const pubsub = createClient();
     const leaderKeepaliveChannel = '__redis-leader_keepalive__';
     pubsub.subscribe(leaderKeepaliveChannel);
-    await waitForEvent(pubsub, 'message', (channel) => (channel === leaderKeepaliveChannel));
+    await waitForEvent(pubsub, 'message');
     pubsub.unsubscribe(leaderKeepaliveChannel);
     pubsub.quit();
 }
 
 test('single node start/stop'.toUpperCase(), async (t) => {
-    const node = new RedisLeader(createClient, {
-        failoverTimeout: 100,
-    });
+    const failoverTimeout = 100;
+    const node = new RedisLeader(createClient, { failoverTimeout });
+    const switchRole = sinon.spy(node, 'emit').withArgs('switch-role');
 
     await waitForEvent(node, 'switch-role');
 
@@ -49,19 +50,19 @@ test('single node start/stop'.toUpperCase(), async (t) => {
 
     node.stop();
 
+    t.ok(switchRole.calledOnce, 'event "switch-role" was emitted only once');
     await delay(100);
 });
 
 test('two nodes start/stop'.toUpperCase(), async (t) => {
-    const options = {
-        failoverTimeout: 100,
-    };
-    const leader = new RedisLeader(createClient, options);
+    const failoverTimeout = 100;
+
+    const leader = new RedisLeader(createClient, { failoverTimeout });
     await waitForEvent(leader, 'switch-role');
 
     await delay(20);
 
-    const worker = new RedisLeader(createClient, options);
+    const worker = new RedisLeader(createClient, { failoverTimeout });
     await waitForEvent(worker, 'switch-role');
 
     t.equal(leader.isLeader(), true, 'leader node is leader');
@@ -72,7 +73,7 @@ test('two nodes start/stop'.toUpperCase(), async (t) => {
     leader.stop();
     worker.stop();
 
-    await delay(options.failoverTimeout);
+    await delay(failoverTimeout);
 });
 
 /*
@@ -81,15 +82,12 @@ test('two nodes start/stop'.toUpperCase(), async (t) => {
 const N = 3;
 
 test(`${N} nodes switch leader`.toUpperCase(), async (t) => {
-    const options = {
-        failoverTimeout: 200,
-        // logger: console,
-    };
+    const failoverTimeout = 200;
     let counter;
 
     // ------------------------------------------------ //
     t.comment(`- create ${N} nodes`);
-    const nodes = Array.from({ length: N }).map(() => new RedisLeader(createClient, options));
+    const nodes = Array.from({ length: N }).map(() => new RedisLeader(createClient, { failoverTimeout }));
     t.pass(`${N} nodes created`);
 
     await Promise.all(nodes.map(node => waitForEvent(node, 'switch-role')));
@@ -124,7 +122,7 @@ test(`${N} nodes switch leader`.toUpperCase(), async (t) => {
     t.equal(counter.leader, 1, `leader: ${counter.leader}`);
     t.equal(counter.worker, N - 2, `workers: ${counter.worker}`);
 
-    await delay(options.failoverTimeout * 2);
+    await delay(failoverTimeout * 2);
 
 
     // ------------------------------------------------ //
@@ -132,5 +130,5 @@ test(`${N} nodes switch leader`.toUpperCase(), async (t) => {
     await Promise.all(nodes.map(node => node.stop()));
     t.pass(`${N} nodes stopped`);
 
-    await delay(options.failoverTimeout);
+    await delay(failoverTimeout);
 });

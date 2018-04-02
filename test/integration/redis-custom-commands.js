@@ -27,6 +27,7 @@ test('setup', async (t) => {
     await redis.flushdb();
 
     redis.defineCommand('pexpirenex', lua.pexpirenex);
+    redis.defineCommand('pexpireifeq', lua.pexpireifeq);
 
     t.pass('done');
 });
@@ -65,6 +66,35 @@ test('pexpirenex', async (t) => {
     t.ok(
         await redis.pttl('foo') > 1,
         'ensure key ttl not changed',
+    );
+
+    await redis.del('foo');
+});
+
+test('pexpireifeq', async (t) => {
+    await redis.set('foo', 'bar');
+
+    t.equal(
+        await redis.pexpireifeq('foo', 'bar', 10000),
+        1,
+        'set ttl for key if value match',
+    );
+
+    t.ok(
+        await redis.pttl('foo') > 0,
+        'ensure ttl set',
+    );
+
+    t.equal(
+        await redis.pexpireifeq('foo', 'baz', 10000),
+        0,
+        'set ttl for key if value not match',
+    );
+
+    t.equal(
+        await redis.pexpireifeq('foobar', 'baz', 10000),
+        0,
+        'set ttl for not existing key',
     );
 
     await redis.del('foo');

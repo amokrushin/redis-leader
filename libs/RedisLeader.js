@@ -16,10 +16,12 @@ const {
     START_KEEPALIVE,
     STOP_KEEPALIVE,
     WATCHDOG_TRIGGER,
+    KEEPALIVE_FAILURE,
 } = require('./events');
 
 const noop = () => {};
 const joinKey = (...args) => args.filter(v => v).join(':');
+const delay = (timeout = 0) => new Promise(resolve => setTimeout(resolve, timeout));
 
 class RedisLeader extends EventEmitter {
     constructor(createClient, options) {
@@ -81,7 +83,9 @@ class RedisLeader extends EventEmitter {
                 logger.info('[DISPATCH]', logNodeId, action);
 
                 await this._dispatch(SET_REDIS_CLIENT, { redisClient: this._createClient() });
-                await this._dispatch(SET_NODE_ID, { nodeId: await this._requestNodeId() });
+                if (!prevState.nodeId) {
+                    await this._dispatch(SET_NODE_ID, { nodeId: await this._requestNodeId() });
+                }
                 await this._dispatch(SWITCH_ROLE, { isLeader: await this._requestIsLeader() });
                 break;
             }
@@ -100,6 +104,7 @@ class RedisLeader extends EventEmitter {
 
                 if (redisClient) {
                     redisClient.defineCommand('pexpirenex', lua.pexpirenex);
+                    redisClient.defineCommand('pexpireifeq', lua.pexpireifeq);
                 }
                 if (prevState.redisClient && !redisClient) {
                     prevState.redisClient.quit();
@@ -119,33 +124,33 @@ class RedisLeader extends EventEmitter {
             case SWITCH_ROLE: {
                 const { isLeader } = patch;
                 if (prevState.isLeader === isLeader) break;
-                logger.info('[DISPATCH]', logNodeId, action, isLeader);
+                logger.info('[DISPATCH]', logNodeId, action, `${prevState.isLeader} -> ${isLeader}`);
 
                 this._setState({ isLeader });
 
-                // null -> true
-                // false -> true
-                if (prevState.isLeader !== true && isLeader === true) {
-                    await this._dispatch(START_KEEPALIVE);
-                }
                 // true -> null
                 // true -> false
                 if (prevState.isLeader === true && isLeader !== true) {
                     await this._dispatch(STOP_KEEPALIVE);
-                }
-                // null -> false
-                // true -> false
-                if (prevState.isLeader !== false && isLeader === false) {
-                    await this._dispatch(START_WATCHDOG);
                 }
                 // false -> null
                 // false -> true
                 if (prevState.isLeader === false && isLeader !== false) {
                     await this._dispatch(STOP_WATCHDOG);
                 }
-                if (isLeader !== null) {
-                    this.emit('switch-role');
+                // null -> true
+                // false -> true
+                if (prevState.isLeader !== true && isLeader === true) {
+                    await this._dispatch(START_KEEPALIVE);
                 }
+                // null -> false
+                // true -> false
+                if (prevState.isLeader !== false && isLeader === false) {
+                    await this._dispatch(START_WATCHDOG);
+                }
+
+                this.emit('switch-role');
+
                 break;
             }
             case START_WATCHDOG: {
@@ -198,6 +203,14 @@ class RedisLeader extends EventEmitter {
                 }
                 break;
             }
+            case KEEPALIVE_FAILURE: {
+                logger.info('[DISPATCH]', logNodeId, action);
+                const { failoverTimeout } = this._options;
+                await this._dispatch(STOP);
+                await delay(failoverTimeout);
+                await this._dispatch(START);
+                break;
+            }
             default:
         }
     }
@@ -214,13 +227,22 @@ class RedisLeader extends EventEmitter {
     }
 
     _startKeepalive() {
-        const { failoverTimeout, keepaliveChannel } = this._options;
+        const { keyPrefix, keyNodeLeaderId, failoverTimeout, keepaliveChannel } = this._options;
         const { nodeId, redisClient } = this._getState();
         const keepaliveInterval = Math.ceil(failoverTimeout / 2);
 
+        const key = joinKey(keyPrefix, keyNodeLeaderId);
+
         return setInterval(
             () => {
-                redisClient.publish(keepaliveChannel, nodeId);
+                redisClient.get(key).then((leaderId) => {
+                    if (leaderId === nodeId) {
+                        redisClient.publish(keepaliveChannel, nodeId);
+                        redisClient.pexpireifeq(key, nodeId, failoverTimeout);
+                    } else {
+                        this._dispatch(KEEPALIVE_FAILURE).catch(this._emitError);
+                    }
+                });
             },
             keepaliveInterval,
         );
@@ -272,8 +294,8 @@ class RedisLeader extends EventEmitter {
         const { keyPrefix, keyNodeIdSeq } = this._options;
         const { redisClient } = this._getState();
         const key = joinKey(keyPrefix, keyNodeIdSeq);
-
-        return redisClient.incr(key);
+        const nodeId = String(await redisClient.incr(key));
+        return nodeId;
     }
 
     async _requestIsLeader() {
