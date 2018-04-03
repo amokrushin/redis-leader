@@ -286,7 +286,9 @@ class RedisLeader extends EventEmitter {
         watchdog.cancel();
     }
 
-    _onPubsubMessage() {
+    _onPubsubMessage(channel) {
+        if (channel !== this._options.pubsubChannel) return;
+
         const { watchdog } = this._getState();
 
         assert(
