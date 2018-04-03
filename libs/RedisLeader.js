@@ -83,7 +83,7 @@ class RedisLeader extends EventEmitter {
                 logger.info('[DISPATCH]', logNodeId, action);
 
                 await this._dispatch(SET_REDIS_CLIENT, {
-                    redisClient: this._createClient(),
+                    redisClient: this._createClient({ ref: Symbol.for('nonblocking') }),
                 });
                 if (!prevState.nodeId) {
                     await this._dispatch(SET_NODE_ID, {
@@ -262,7 +262,7 @@ class RedisLeader extends EventEmitter {
     _startWatchdog() {
         const { failoverTimeout, keepaliveChannel } = this._options;
 
-        const pubsubClient = this._createClient();
+        const pubsubClient = this._createClient({ ref: Symbol.for('subscriber') });
         const watchdog = new Watchdog({
             timeout: failoverTimeout,
             continuous: true,
