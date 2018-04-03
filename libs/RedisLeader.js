@@ -82,11 +82,17 @@ class RedisLeader extends EventEmitter {
                 if (prevState.isLeader !== null) break;
                 logger.info('[DISPATCH]', logNodeId, action);
 
-                await this._dispatch(SET_REDIS_CLIENT, { redisClient: this._createClient() });
+                await this._dispatch(SET_REDIS_CLIENT, {
+                    redisClient: this._createClient(),
+                });
                 if (!prevState.nodeId) {
-                    await this._dispatch(SET_NODE_ID, { nodeId: await this._requestNodeId() });
+                    await this._dispatch(SET_NODE_ID, {
+                        nodeId: await this._requestNodeId(),
+                    });
                 }
-                await this._dispatch(SWITCH_ROLE, { isLeader: await this._requestIsLeader() });
+                await this._dispatch(SWITCH_ROLE, {
+                    isLeader: await this._requestIsLeader(),
+                });
                 break;
             }
             case STOP: {
