@@ -113,7 +113,7 @@ class RedisLeader extends EventEmitter {
                     redisClient.defineCommand('pexpireifeq', lua.pexpireifeq);
                 }
                 if (prevState.redisClient && !redisClient) {
-                    prevState.redisClient.quit();
+                    await prevState.redisClient.quit();
                 }
 
                 this._setState({ redisClient });
