@@ -13,10 +13,10 @@ const {
     SWITCH_ROLE,
     START_WATCHDOG,
     STOP_WATCHDOG,
-    START_KEEPALIVE,
-    STOP_KEEPALIVE,
+    START_HEARTBEAT,
+    STOP_HEARTBEAT,
     WATCHDOG_TRIGGER,
-    KEEPALIVE_FAILURE,
+    HEARTBEAT_FAILURE,
 } = require('./events');
 
 const noop = () => {};
@@ -40,7 +40,7 @@ class RedisLeader extends EventEmitter {
         this._state = {
             nodeId: null,
             isLeader: null,
-            keepaliveTimerId: null,
+            heartbeatTimerId: null,
             redisClient: null,
             pubsubClient: null,
             watchdog: null,
@@ -137,7 +137,7 @@ class RedisLeader extends EventEmitter {
                 // true -> null
                 // true -> false
                 if (prevState.isLeader === true && isLeader !== true) {
-                    await this._dispatch(STOP_KEEPALIVE);
+                    await this._dispatch(STOP_HEARTBEAT);
                 }
                 // false -> null
                 // false -> true
@@ -147,7 +147,7 @@ class RedisLeader extends EventEmitter {
                 // null -> true
                 // false -> true
                 if (prevState.isLeader !== true && isLeader === true) {
-                    await this._dispatch(START_KEEPALIVE);
+                    await this._dispatch(START_HEARTBEAT);
                 }
                 // null -> false
                 // true -> false
@@ -179,24 +179,24 @@ class RedisLeader extends EventEmitter {
                 this._setState({ pubsubClient: null, watchdog: null });
                 break;
             }
-            case START_KEEPALIVE: {
+            case START_HEARTBEAT: {
                 logger.info('[DISPATCH]', logNodeId, action);
                 assert(
-                    !prevState.keepaliveTimerId,
-                    'Invalid state: keepalive already started',
+                    !prevState.heartbeatTimerId,
+                    'Invalid state: heartbeat already started',
                 );
-                const keepaliveTimerId = this._startKeepalive();
-                this._setState({ keepaliveTimerId });
+                const heartbeatTimerId = this._startHeartbeat();
+                this._setState({ heartbeatTimerId });
                 break;
             }
-            case STOP_KEEPALIVE: {
+            case STOP_HEARTBEAT: {
                 logger.info('[DISPATCH]', logNodeId, action);
                 assert(
-                    prevState.keepaliveTimerId,
-                    'Invalid state: keepalive not started',
+                    prevState.heartbeatTimerId,
+                    'Invalid state: heartbeat not started',
                 );
-                clearInterval(prevState.keepaliveTimerId);
-                this._setState({ keepaliveTimerId: null });
+                clearInterval(prevState.heartbeatTimerId);
+                this._setState({ heartbeatTimerId: null });
                 break;
             }
             case WATCHDOG_TRIGGER: {
@@ -209,7 +209,7 @@ class RedisLeader extends EventEmitter {
                 }
                 break;
             }
-            case KEEPALIVE_FAILURE: {
+            case HEARTBEAT_FAILURE: {
                 logger.info('[DISPATCH]', logNodeId, action);
                 const { failoverTimeout } = this._options;
                 await this._dispatch(STOP);
@@ -232,10 +232,10 @@ class RedisLeader extends EventEmitter {
         };
     }
 
-    _startKeepalive() {
-        const { keyPrefix, keyNodeLeaderId, failoverTimeout, keepaliveChannel } = this._options;
+    _startHeartbeat() {
+        const { keyPrefix, keyNodeLeaderId, failoverTimeout, heartbeatChannel } = this._options;
         const { nodeId, redisClient } = this._getState();
-        const keepaliveInterval = Math.ceil(failoverTimeout / 2);
+        const heartbeatInterval = Math.ceil(failoverTimeout / 2);
 
         const key = joinKey(keyPrefix, keyNodeLeaderId);
 
@@ -244,23 +244,23 @@ class RedisLeader extends EventEmitter {
                 redisClient.get(key)
                     .then((leaderId) => {
                         if (leaderId === nodeId) {
-                            redisClient.publish(keepaliveChannel, nodeId).catch(noop);
+                            redisClient.publish(heartbeatChannel, nodeId).catch(noop);
                             redisClient.pexpireifeq(key, nodeId, failoverTimeout).catch(noop);
                         } else {
-                            this._dispatch(KEEPALIVE_FAILURE).catch(noop);
+                            this._dispatch(HEARTBEAT_FAILURE).catch(noop);
                         }
                         return null;
                     })
                     .catch(() => {
-                        this._dispatch(KEEPALIVE_FAILURE).catch(noop);
+                        this._dispatch(HEARTBEAT_FAILURE).catch(noop);
                     });
             },
-            keepaliveInterval,
+            heartbeatInterval,
         );
     }
 
     _startWatchdog() {
-        const { failoverTimeout, keepaliveChannel } = this._options;
+        const { failoverTimeout, heartbeatChannel } = this._options;
 
         const pubsubClient = this._createClient({ ref: Symbol.for('subscriber') });
         const watchdog = new Watchdog({
@@ -269,17 +269,17 @@ class RedisLeader extends EventEmitter {
         });
 
         pubsubClient.on('message', this._onPubsubMessage);
-        pubsubClient.subscribe(keepaliveChannel);
+        pubsubClient.subscribe(heartbeatChannel);
         watchdog.on('trigger', this._onWatchdog);
 
         return { pubsubClient, watchdog };
     }
 
     _stopWatchdog() {
-        const { keepaliveChannel } = this._options;
+        const { heartbeatChannel } = this._options;
         const { pubsubClient, watchdog } = this._getState();
 
-        pubsubClient.unsubscribe(keepaliveChannel);
+        pubsubClient.unsubscribe(heartbeatChannel);
         pubsubClient.removeListener('message', this._onPubsubMessage);
         watchdog.removeListener('trigger', this._onWatchdog);
         pubsubClient.quit();
@@ -347,7 +347,7 @@ RedisLeader.defaultOptions = {
     keyNodeLeaderId: 'node_leader_id',
     logger: { info: noop },
     failoverTimeout: 1000,
-    keepaliveChannel: '__redis-leader_keepalive__',
+    heartbeatChannel: '__redis-leader_heartbeat__',
     autostart: true,
 };
 

@@ -64,7 +64,7 @@ test('switch role on the fly'.toUpperCase(), async (t) => {
             [null, 'SET_REDIS_CLIENT'],
             [idA, 'SET_NODE_ID'],
             [idA, 'SWITCH_ROLE'],
-            [idA, 'START_KEEPALIVE'],
+            [idA, 'START_HEARTBEAT'],
 
             // start nodeB and wait for "switch-role" event
             [null, 'START'],
@@ -75,18 +75,18 @@ test('switch role on the fly'.toUpperCase(), async (t) => {
 
             /* simulate failure */
 
-            // keepalive failure triggered on nodeA
-            [idA, 'KEEPALIVE_FAILURE'],
+            // heartbeat failure triggered on nodeA
+            [idA, 'HEARTBEAT_FAILURE'],
             [idA, 'STOP'],
             [idA, 'SWITCH_ROLE'],
-            [idA, 'STOP_KEEPALIVE'],
+            [idA, 'STOP_HEARTBEAT'],
             [idA, 'SET_REDIS_CLIENT'],
 
             // watchdog triggered on nodeB
             [idB, 'WATCHDOG_TRIGGER'],
             [idB, 'SWITCH_ROLE'],
             [idB, 'STOP_WATCHDOG'],
-            [idB, 'START_KEEPALIVE'],
+            [idB, 'START_HEARTBEAT'],
 
             // nodeA starts after timeout
             [idA, 'START'],
@@ -100,7 +100,7 @@ test('switch role on the fly'.toUpperCase(), async (t) => {
             [idA, 'STOP_WATCHDOG'],
             [idB, 'STOP'],
             [idB, 'SWITCH_ROLE'],
-            [idB, 'STOP_KEEPALIVE'],
+            [idB, 'STOP_HEARTBEAT'],
             [idA, 'SET_REDIS_CLIENT'],
             [idB, 'SET_REDIS_CLIENT'],
         ],

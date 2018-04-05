@@ -6,9 +6,9 @@ module.exports = [
     'SWITCH_ROLE',
     'START_WATCHDOG',
     'STOP_WATCHDOG',
-    'START_KEEPALIVE',
-    'STOP_KEEPALIVE',
-    'SET_KEEPALIVE_TIMER',
+    'START_HEARTBEAT',
+    'STOP_HEARTBEAT',
+    'SET_HEARTBEAT_TIMER',
     'WATCHDOG_TRIGGER',
-    'KEEPALIVE_FAILURE',
+    'HEARTBEAT_FAILURE',
 ].reduce((acc, event) => Object.assign(acc, { [event]: event }), {});

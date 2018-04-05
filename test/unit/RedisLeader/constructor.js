@@ -78,8 +78,8 @@ test('initial state', (t) => {
 
     t.equal(state.nodeId, null, 'nodeId is null');
     t.equal(state.isLeader, null, 'isLeader is null');
-    t.equal(state.keepaliveTimerId, null, 'keepaliveTimerId is null');
-    t.equal(state.redisClient, null, 'keepaliveTimerId is null');
+    t.equal(state.heartbeatTimerId, null, 'heartbeatTimerId is null');
+    t.equal(state.redisClient, null, 'heartbeatTimerId is null');
     t.equal(state.pubsubClient, null, 'pubsubClient is null');
     t.equal(state.watchdog, null, 'watchdog is null');
 

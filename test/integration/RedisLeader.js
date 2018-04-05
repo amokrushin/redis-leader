@@ -23,12 +23,12 @@ const countNodesByState = (nodes) => {
     return { inactive, leader, worker };
 };
 
-async function waitForKeepalive() {
+async function waitForHeartbeat() {
     const pubsub = createClient();
-    const leaderKeepaliveChannel = '__redis-leader_keepalive__';
-    pubsub.subscribe(leaderKeepaliveChannel);
+    const leaderHeartbeatChannel = '__redis-leader_heartbeat__';
+    pubsub.subscribe(leaderHeartbeatChannel);
     await waitForEvent(pubsub, 'message');
-    pubsub.unsubscribe(leaderKeepaliveChannel);
+    pubsub.unsubscribe(leaderHeartbeatChannel);
     pubsub.quit();
 }
 
@@ -41,7 +41,7 @@ test('single node start/stop'.toUpperCase(), async (t) => {
 
     t.equal(node.isLeader(), true, 'single node is leader');
 
-    await waitForKeepalive();
+    await waitForHeartbeat();
 
     node.stop();
 
@@ -63,7 +63,7 @@ test('two nodes start/stop'.toUpperCase(), async (t) => {
     t.equal(leader.isLeader(), true, 'leader node is leader');
     t.equal(worker.isLeader(), false, 'worker node is not leader');
 
-    await waitForKeepalive();
+    await waitForHeartbeat();
 
     leader.stop();
     worker.stop();
