@@ -300,7 +300,7 @@ class RedisLeader extends EventEmitter {
     }
 
     _onWatchdog() {
-        this._dispatch(WATCHDOG_TRIGGER).catch(this._emitError);
+        this._schedule(() => this._dispatch(WATCHDOG_TRIGGER)).catch(this._emitError);
     }
 
     async _requestNodeId() {
@@ -332,11 +332,15 @@ class RedisLeader extends EventEmitter {
 
     _emitError(err) {
         /*
+         *  Useful call stack
+         */
+        const error = new Error(err);
+        /*
          *  Some unicorns are here to prevent `UnhandledPromiseRejectionWarning`
          *  https://qubyte.codes/blog/promises-and-nodejs-event-emitters-dont-mix
          */
         process.nextTick(() => {
-            this.emit('error', err);
+            this.emit('error', error);
         });
     }
 }
