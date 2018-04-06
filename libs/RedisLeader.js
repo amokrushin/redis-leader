@@ -73,7 +73,7 @@ class RedisLeader extends EventEmitter {
     }
 
     async _dispatch(action, patch) {
-        const { logger } = this._options;
+        const { sharedConnection, logger } = this._options;
         const prevState = this._getState();
         const logNodeId = (patch && patch.nodeId) || prevState.nodeId;
 
@@ -112,7 +112,7 @@ class RedisLeader extends EventEmitter {
                     redisClient.defineCommand('pexpirenex', lua.pexpirenex);
                     redisClient.defineCommand('pexpireifeq', lua.pexpireifeq);
                 }
-                if (prevState.redisClient && !redisClient) {
+                if (!sharedConnection && prevState.redisClient && !redisClient) {
                     await prevState.redisClient.quit();
                 }
 
@@ -276,13 +276,15 @@ class RedisLeader extends EventEmitter {
     }
 
     _stopWatchdog() {
-        const { heartbeatChannel } = this._options;
+        const { heartbeatChannel, sharedConnection } = this._options;
         const { pubsubClient, watchdog } = this._getState();
 
         pubsubClient.unsubscribe(heartbeatChannel);
         pubsubClient.removeListener('message', this._onPubsubMessage);
         watchdog.removeListener('trigger', this._onWatchdog);
-        pubsubClient.quit();
+        if (!sharedConnection) {
+            pubsubClient.quit();
+        }
         watchdog.cancel();
     }
 
@@ -349,6 +351,7 @@ RedisLeader.defaultOptions = {
     failoverTimeout: 1000,
     heartbeatChannel: '__redis-leader_heartbeat__',
     autostart: true,
+    sharedConnection: false,
 };
 
 module.exports = RedisLeader;
